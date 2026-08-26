@@ -4,6 +4,7 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
 from peft import LoraConfig, get_peft_model
+from datasets import load_dataset
 
 # Load model and tokenizer
 model_name = "TinyLlama/TinyLlama-1.1B"
@@ -27,30 +28,55 @@ lora_config = LoraConfig(
 
 #Apply LoRA to model
 model = get_peft_model(model, lora_config)
-model.print_trainable_parameters()  # Check how many parameters are trainable
+print(f"Trainable parameters: {model.print_trainable_parameters()}")
+#model.print_trainable_parameters()  # Check how many parameters are trainable
 
 # Load dataset (example: tiny_shakespeare)
-from datasets import load_dataset
-dataset = load_dataset("tiny_shakespeare", split="train").map(
-  lambda x: tokenizer(x["test"], truncation=True, max_length=512),
+#from datasets import load_dataset
+
+#dataset = load_dataset("tiny_shakespeare", split="train").map(
+#  lambda x: tokenizer(x["test"], truncation=True, max_length=512),
+#  batched=True,
+#)
+dataset = load_dataset("tiny_shakespeare", split="train")
+def tokenize_function(examples):
+  return tokenizer(
+    examples["text"],
+    truncation=True,
+    max_length=512,
+    return_overflowing_tokens=True,
+    return_length=True,    
+  )
+tokenized_dataset = dataset.map(
+  tokenize_function,
   batched=True,
+  remove_columns=["text"],
 )
 
 # Training arguments
 training_args = TrainingArguments(
-  output_dir="./results",
+  output_dir="/app/results",
   per_device_train_batch_size=4, # Adjust based on GPU memory
   gradient_accumulation_steps=4,
   num_train_epochs=1,
   fp16=True,
   save_steps=500,
   logging_steps=100,
+  learning_rate=2e-5,
+  weight_decay=0.01,
+  warmup_steps=100,
+  optim="paged_adamw_8bit",
 )
 
 # Trainer
 trainer = Trainer(
   model=model,
   args=training_args,
-  train_dataset=dataset,
+  train_dataset=tokenized_dataset,
 )
+# Train
 trainer.train()
+
+# Save model
+model.save_pretrained("/app/results")
+tokenizer.save_pretrained("/app/results")
