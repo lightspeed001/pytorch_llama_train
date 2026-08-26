@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tinyllama-trainer
+spec:
+  containers:
+    - name: trainer
+      image: ${CLUSTER_REGISTRY}/tinyllama-trainer:latest
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+      volumeMounts:
+        - mountPath: /app/results
+          name: model-storage
+  volumes:
+    - name: model-storage
+      persistentVolumeClaim:
+        claimName: tinyllama-pvc
+  restartPolicy: Never
+
