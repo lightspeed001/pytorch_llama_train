@@ -1,5 +1,7 @@
 # Training TinyLlama-1.1B on Colab
-!pip install -q transformers accelerate datasets peft bitsandbytes
+
+# Below pip is only for Kaggle or Colab notebooks
+#!pip install -q transformers accelerate datasets peft bitsandbytes
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
@@ -8,7 +10,11 @@ from datasets import load_dataset
 
 # Load model and tokenizer
 model_name = "TinyLlama/TinyLlama-1.1B"
+
+# Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# Load model with 8-bit quantization and auto device mapping
 model = AutoModelForCausalLM.from_pretrained(
   model_name,
   torch_dtype=torch.float16, # use mixed precision
@@ -32,40 +38,46 @@ print(f"Trainable parameters: {model.print_trainable_parameters()}")
 #model.print_trainable_parameters()  # Check how many parameters are trainable
 
 # Load dataset (example: tiny_shakespeare)
+
 #from datasets import load_dataset
 
 #dataset = load_dataset("tiny_shakespeare", split="train").map(
 #  lambda x: tokenizer(x["test"], truncation=True, max_length=512),
 #  batched=True,
 #)
+
 dataset = load_dataset("tiny_shakespeare", split="train")
+
+# Tokenize the dataset
 def tokenize_function(examples):
   return tokenizer(
     examples["text"],
     truncation=True,
-    max_length=512,
+    max_length=512, # Limit sequence length
     return_overflowing_tokens=True,
     return_length=True,    
   )
+
+# Apply tokenization
 tokenized_dataset = dataset.map(
   tokenize_function,
   batched=True,
-  remove_columns=["text"],
+  remove_columns=["text"], # Remove original text column
 )
 
 # Training arguments
 training_args = TrainingArguments(
-  output_dir="/app/results",
-  per_device_train_batch_size=4, # Adjust based on GPU memory
-  gradient_accumulation_steps=4,
-  num_train_epochs=1,
-  fp16=True,
-  save_steps=500,
-  logging_steps=100,
-  learning_rate=2e-5,
-  weight_decay=0.01,
-  warmup_steps=100,
-  optim="paged_adamw_8bit",
+  output_dir="/app/results", # Directory to save checkpoints
+  per_device_train_batch_size=4, # Batch size per GPU (Adjust based on GPU memory)
+  gradient_accumulation_steps=4, # Simulate larger batch size
+  num_train_epochs=1, # Number of epochs
+  fp16=True, # Use mixed precision
+  save_steps=500, # save checkpoint every 500 steps
+  logging_steps=100, # Log metrics every 100 steps
+  learning_rate=2e-5, # Learning rate
+  weight_decay=0.01, # L2 regulization
+  warmup_steps=100, # Learning rate warmup
+  optim="paged_adamw_8bit", # Optimizer with 8-bit states
 )
 
 # Trainer
