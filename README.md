@@ -24,10 +24,10 @@
 
      ```
 
-### Building and Pushing the Image :hammer:_and_wrench:
+### Building and Pushing the Image :hammer_and_wrench:
 1. Build the Docker image:
   ```bash
-        docker build -t your-registry/tinyllama-trainer:latest .
+        docker build -t ${DOCKER_REGISTRY}/tinyllama-trainer:latest .
         
    ```
 2. Push to a registry:
@@ -45,6 +45,7 @@
   >  * Check logs:
     ```bash
           kubectl logs -f tinyllama-trainer
+          
      ```
  >  * Describe the pod for events:
    ```bash
