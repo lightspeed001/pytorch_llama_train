@@ -47,7 +47,8 @@
           kubectl logs -f tinyllama-trainer
           
      ```
- >  * Describe the pod for events:
+     
+  >  * Describe the pod for events:
    ```bash
         kubectl describe pod tinyllama-trainer
         
