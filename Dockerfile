@@ -42,4 +42,4 @@ COPY llama_train.py /app/llama_train.py
 WORKDIR /app
 
 # Default command (override in k8s config)
-CMD ["python", "train.py"]
+CMD ["python", "llama_train.py"]
